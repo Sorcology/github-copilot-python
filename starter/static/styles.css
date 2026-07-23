@@ -110,11 +110,11 @@ body.dark-mode .sudoku-cell {
 }
 
 .sudoku-cell.sudoku-block-light {
-    background: #f8fafc;
+    background: #ffffff;
 }
 
 .sudoku-cell.sudoku-block-dark {
-    background: #eef4ff;
+    background: #e5e7eb;
 }
 
 body.dark-mode .sudoku-cell.sudoku-block-light {
@@ -122,27 +122,23 @@ body.dark-mode .sudoku-cell.sudoku-block-light {
 }
 
 body.dark-mode .sudoku-cell.sudoku-block-dark {
-    background: #2f3e56;
+    background: #374151;
 }
 
 .sudoku-cell.prefilled {
-    background: #f3f4f6;
     font-weight: bold;
     color: #111827;
 }
 
 body.dark-mode .sudoku-cell.prefilled {
-    background: #374151;
     color: #f9fafb;
 }
 
 .sudoku-cell.incorrect {
-    background: #ffebee;
     color: #b91c1c;
 }
 
 body.dark-mode .sudoku-cell.incorrect {
-    background: #4b1d1d;
     color: #fecaca;
 }
 
