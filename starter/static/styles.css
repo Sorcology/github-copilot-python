@@ -124,6 +124,22 @@ button:disabled {
     color: #d32f2f;
 }
 
+.name-prompt {
+    margin: 12px auto 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    padding: 10px 14px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.name-prompt input {
+    padding: 6px 8px;
+    font-size: 14px;
+}
+
 .leaderboard {
     margin: 20px auto 40px;
     display: inline-block;
