@@ -8,6 +8,7 @@ let currentDifficulty = 'medium';
 let hintsUsed = 0;
 let hintCellIndex = null;
 let pendingScore = null;
+const THEME_STORAGE_KEY = 'sudoku-theme';
 
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
@@ -62,6 +63,26 @@ function startTimer() {
     elapsedSeconds += 1;
     updateTimerDisplay();
   }, 1000);
+}
+
+function applyTheme(theme) {
+  document.body.classList.toggle('dark-mode', theme === 'dark');
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    toggle.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+    toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+  }
+}
+
+function loadTheme() {
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  const theme = storedTheme === 'dark' ? 'dark' : 'light';
+  applyTheme(theme);
+  return theme;
+}
+
+function saveTheme(theme) {
+  window.localStorage.setItem(THEME_STORAGE_KEY, theme);
 }
 
 function loadLeaderboard() {
@@ -264,6 +285,11 @@ window.addEventListener('load', () => {
   document.getElementById('new-game').addEventListener('click', newGame);
   document.getElementById('check-solution').addEventListener('click', checkSolution);
   document.getElementById('hint').addEventListener('click', requestHint);
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    const nextTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+    applyTheme(nextTheme);
+    saveTheme(nextTheme);
+  });
   document.getElementById('save-score').addEventListener('click', () => {
     if (!pendingScore) {
       return;
@@ -283,6 +309,7 @@ window.addEventListener('load', () => {
     });
   });
   setDifficulty(currentDifficulty);
+  loadTheme();
   loadLeaderboard();
   // initialize
   newGame();
