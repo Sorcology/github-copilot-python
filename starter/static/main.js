@@ -117,9 +117,11 @@ function createBoardElement() {
     rowDiv.className = 'sudoku-row';
     for (let j = 0; j < SIZE; j++) {
       const input = document.createElement('input');
+      const blockIndex = Math.floor(i / 3) + Math.floor(j / 3);
+      const blockClass = blockIndex % 2 === 0 ? 'sudoku-block-light' : 'sudoku-block-dark';
       input.type = 'text';
       input.maxLength = 1;
-      input.className = 'sudoku-cell';
+      input.className = `sudoku-cell ${blockClass}`;
       input.dataset.row = i;
       input.dataset.col = j;
       input.addEventListener('input', (e) => {
