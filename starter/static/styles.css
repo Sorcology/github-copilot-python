@@ -11,6 +11,31 @@ h1 {
     color: #333;
 }
 
+#timer {
+    font-size: 24px;
+    font-weight: bold;
+    color: #1976d2;
+    margin: 12px 0 0;
+}
+
+.difficulty-selector {
+    margin: 16px 0 0;
+}
+
+.difficulty-btn {
+    padding: 6px 14px;
+    margin: 0 6px;
+    font-size: 14px;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 4px;
+}
+
+.difficulty-btn.active {
+    background: #1976d2;
+    color: #fff;
+}
+
 #sudoku-board {
     display: inline-block;
     margin: 30px auto;
