@@ -7,6 +7,12 @@
 </head>
 <body>
   <h1>Sudoku Game</h1>
+  <div id="timer" aria-live="polite">00:00</div>
+  <div class="difficulty-selector" role="group" aria-label="Difficulty selector">
+    <button type="button" class="difficulty-btn active" data-difficulty="easy">Easy</button>
+    <button type="button" class="difficulty-btn" data-difficulty="medium">Medium</button>
+    <button type="button" class="difficulty-btn" data-difficulty="hard">Hard</button>
+  </div>
   <div id="sudoku-board"></div>
   <div class="controls">
     <button id="new-game">New Game</button>
