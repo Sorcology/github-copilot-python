@@ -273,7 +273,7 @@ async function checkSolution() {
     };
     showNamePrompt();
     msg.style.color = '#388e3c';
-    msg.innerText = 'Congratulations! Enter your name to save your score.';
+    msg.innerText = `Congratulations! Time: ${formatTime(elapsedSeconds)} | Difficulty: ${currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1)} | Hints used: ${hintsUsed}`;
   } else {
     msg.style.color = '#d32f2f';
     msg.innerText = 'Some cells are incorrect.';
