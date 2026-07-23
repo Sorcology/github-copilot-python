@@ -1,6 +1,48 @@
 // Client-side rendering and interaction for the Flask-backed Sudoku
 const SIZE = 9;
 let puzzle = [];
+let timerInterval = null;
+let elapsedSeconds = 0;
+let currentDifficulty = 'medium';
+
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+function updateTimerDisplay() {
+  const timerElement = document.getElementById('timer');
+  if (timerElement) {
+    timerElement.innerText = formatTime(elapsedSeconds);
+  }
+}
+
+function setDifficulty(difficulty) {
+  currentDifficulty = difficulty;
+  document.querySelectorAll('.difficulty-btn').forEach((button) => {
+    const isActive = button.dataset.difficulty === difficulty;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
+function stopTimer() {
+  if (timerInterval !== null) {
+    window.clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+function startTimer() {
+  stopTimer();
+  elapsedSeconds = 0;
+  updateTimerDisplay();
+  timerInterval = window.setInterval(() => {
+    elapsedSeconds += 1;
+    updateTimerDisplay();
+  }, 1000);
+}
 
 function createBoardElement() {
   const boardDiv = document.getElementById('sudoku-board');
@@ -48,7 +90,8 @@ function renderPuzzle(puz) {
 }
 
 async function newGame() {
-  const res = await fetch('/new');
+  startTimer();
+  const res = await fetch(`/new?difficulty=${encodeURIComponent(currentDifficulty)}`);
   const data = await res.json();
   renderPuzzle(data.puzzle);
   document.getElementById('message').innerText = '';
@@ -88,6 +131,7 @@ async function checkSolution() {
     }
   }
   if (incorrect.size === 0) {
+    stopTimer();
     msg.style.color = '#388e3c';
     msg.innerText = 'Congratulations! You solved it!';
   } else {
@@ -100,6 +144,13 @@ async function checkSolution() {
 window.addEventListener('load', () => {
   document.getElementById('new-game').addEventListener('click', newGame);
   document.getElementById('check-solution').addEventListener('click', checkSolution);
+  document.querySelectorAll('.difficulty-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+      setDifficulty(button.dataset.difficulty);
+      newGame();
+    });
+  });
+  setDifficulty(currentDifficulty);
   // initialize
   newGame();
 });
