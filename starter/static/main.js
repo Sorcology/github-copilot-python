@@ -8,6 +8,7 @@ let currentDifficulty = 'medium';
 let hintsUsed = 0;
 let hintCellIndex = null;
 let pendingScore = null;
+let completionHandled = false;
 const THEME_STORAGE_KEY = 'sudoku-theme';
 
 function formatTime(seconds) {
@@ -93,9 +94,9 @@ function loadLeaderboard() {
     return;
   }
   leaderboardList.innerHTML = '';
-  entries.slice(0, 10).forEach((entry, index) => {
+  entries.slice(0, 10).forEach((entry) => {
     const item = document.createElement('li');
-    item.innerText = `${index + 1}. ${entry.name} — ${formatTime(entry.time)} — ${entry.difficulty} — hints: ${entry.hintsUsed}`;
+    item.innerText = `${entry.name} — ${formatTime(entry.time)} — ${entry.difficulty} — hints: ${entry.hintsUsed}`;
     leaderboardList.appendChild(item);
   });
 }
@@ -130,6 +131,54 @@ function saveLeaderboardEntry(score) {
   hideNamePrompt();
 }
 
+function getBoardFromInputs() {
+  const boardDiv = document.getElementById('sudoku-board');
+  const inputs = boardDiv.getElementsByTagName('input');
+  const board = [];
+  for (let i = 0; i < SIZE; i++) {
+    board[i] = [];
+    for (let j = 0; j < SIZE; j++) {
+      const idx = i * SIZE + j;
+      const val = inputs[idx].value;
+      board[i][j] = val ? parseInt(val, 10) : 0;
+    }
+  }
+  return board;
+}
+
+function applyCheckResult(data) {
+  const boardDiv = document.getElementById('sudoku-board');
+  const inputs = boardDiv.getElementsByTagName('input');
+  const msg = document.getElementById('message');
+  const incorrect = new Set(data.incorrect.map(x => x[0] * SIZE + x[1]));
+  for (let idx = 0; idx < inputs.length; idx++) {
+    const inp = inputs[idx];
+    if (inp.disabled) continue;
+    inp.classList.remove('incorrect');
+    if (incorrect.has(idx)) {
+      inp.classList.add('incorrect');
+    }
+  }
+  return incorrect;
+}
+
+function completeGame() {
+  if (completionHandled) {
+    return;
+  }
+  completionHandled = true;
+  stopTimer();
+  pendingScore = {
+    time: elapsedSeconds,
+    difficulty: currentDifficulty,
+    hintsUsed
+  };
+  showNamePrompt();
+  const msg = document.getElementById('message');
+  msg.style.color = '#388e3c';
+  msg.innerText = `Congratulations! Time: ${formatTime(elapsedSeconds)} | Difficulty: ${currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1)} | Hints used: ${hintsUsed}`;
+}
+
 function createBoardElement() {
   const boardDiv = document.getElementById('sudoku-board');
   boardDiv.innerHTML = '';
@@ -145,13 +194,29 @@ function createBoardElement() {
       input.className = `sudoku-cell ${blockClass}`;
       input.dataset.row = i;
       input.dataset.col = j;
-      input.addEventListener('input', (e) => {
+      input.addEventListener('input', async (e) => {
         const val = e.target.value.replace(/[^1-9]/g, '');
         e.target.value = val;
         const idx = i * SIZE + j;
         const inputs = boardDiv.getElementsByTagName('input');
         if (inputs[idx]) {
           inputs[idx].classList.remove('incorrect');
+        }
+        const board = getBoardFromInputs();
+        if (board.every((row) => row.every((cell) => cell !== 0))) {
+          const res = await fetch('/check', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({board})
+          });
+          const data = await res.json();
+          if (data.error) {
+            return;
+          }
+          const incorrect = applyCheckResult(data);
+          if (incorrect.size === 0) {
+            completeGame();
+          }
         }
       });
       rowDiv.appendChild(input);
@@ -188,6 +253,7 @@ async function newGame() {
   startTimer();
   hintsUsed = 0;
   pendingScore = null;
+  completionHandled = false;
   clearHintHighlight();
   hideNamePrompt();
   const res = await fetch(`/new?difficulty=${encodeURIComponent(currentDifficulty)}`);
@@ -197,17 +263,9 @@ async function newGame() {
 }
 
 async function requestHint() {
+  const board = getBoardFromInputs();
   const boardDiv = document.getElementById('sudoku-board');
   const inputs = boardDiv.getElementsByTagName('input');
-  const board = [];
-  for (let i = 0; i < SIZE; i++) {
-    board[i] = [];
-    for (let j = 0; j < SIZE; j++) {
-      const idx = i * SIZE + j;
-      const val = inputs[idx].value;
-      board[i][j] = val ? parseInt(val, 10) : 0;
-    }
-  }
   const res = await fetch('/hint', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -229,20 +287,25 @@ async function requestHint() {
   hintCellIndex = hintIndex;
   hintsUsed += 1;
   updateHintButtonState();
+  const boardAfterHint = getBoardFromInputs();
+  if (boardAfterHint.every((row) => row.every((cell) => cell !== 0))) {
+    const res = await fetch('/check', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({board: boardAfterHint})
+    });
+    const dataAfterHint = await res.json();
+    if (!dataAfterHint.error) {
+      const incorrect = applyCheckResult(dataAfterHint);
+      if (incorrect.size === 0) {
+        completeGame();
+      }
+    }
+  }
 }
 
 async function checkSolution() {
-  const boardDiv = document.getElementById('sudoku-board');
-  const inputs = boardDiv.getElementsByTagName('input');
-  const board = [];
-  for (let i = 0; i < SIZE; i++) {
-    board[i] = [];
-    for (let j = 0; j < SIZE; j++) {
-      const idx = i * SIZE + j;
-      const val = inputs[idx].value;
-      board[i][j] = val ? parseInt(val, 10) : 0;
-    }
-  }
+  const board = getBoardFromInputs();
   const res = await fetch('/check', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -255,25 +318,9 @@ async function checkSolution() {
     msg.innerText = data.error;
     return;
   }
-  const incorrect = new Set(data.incorrect.map(x => x[0]*SIZE + x[1]));
-  for (let idx = 0; idx < inputs.length; idx++) {
-    const inp = inputs[idx];
-    if (inp.disabled) continue;
-    inp.classList.remove('incorrect');
-    if (incorrect.has(idx)) {
-      inp.classList.add('incorrect');
-    }
-  }
+  const incorrect = applyCheckResult(data);
   if (incorrect.size === 0) {
-    stopTimer();
-    pendingScore = {
-      time: elapsedSeconds,
-      difficulty: currentDifficulty,
-      hintsUsed
-    };
-    showNamePrompt();
-    msg.style.color = '#388e3c';
-    msg.innerText = `Congratulations! Time: ${formatTime(elapsedSeconds)} | Difficulty: ${currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1)} | Hints used: ${hintsUsed}`;
+    completeGame();
   } else {
     msg.style.color = '#d32f2f';
     msg.innerText = 'Some cells are incorrect.';
@@ -295,7 +342,15 @@ window.addEventListener('load', () => {
       return;
     }
     const playerNameInput = document.getElementById('player-name');
-    const playerName = (playerNameInput.value || 'Player').trim() || 'Player';
+    const playerName = (playerNameInput.value || '').trim();
+    if (!playerName) {
+      msg = document.getElementById('message');
+      if (msg) {
+        msg.style.color = '#d32f2f';
+        msg.innerText = 'Please enter a name before saving your score.';
+      }
+      return;
+    }
     saveLeaderboardEntry({
       name: playerName,
       ...pendingScore
