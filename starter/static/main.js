@@ -56,6 +56,69 @@ function clearHintHighlight() {
   hintCellIndex = null;
 }
 
+function clearConflictHighlights() {
+  const boardDiv = document.getElementById('sudoku-board');
+  if (!boardDiv) {
+    return;
+  }
+  const inputs = boardDiv.getElementsByTagName('input');
+  for (let idx = 0; idx < inputs.length; idx++) {
+    inputs[idx].classList.remove('conflict');
+  }
+}
+
+function updateConflictHighlights() {
+  clearConflictHighlights();
+  const boardDiv = document.getElementById('sudoku-board');
+  if (!boardDiv) {
+    return;
+  }
+  const inputs = boardDiv.getElementsByTagName('input');
+  const board = getBoardFromInputs();
+  const conflictingIndices = new Set();
+
+  for (let row = 0; row < SIZE; row += 1) {
+    for (let col = 0; col < SIZE; col += 1) {
+      const value = board[row][col];
+      if (!value) {
+        continue;
+      }
+
+      const currentIndex = row * SIZE + col;
+      for (let otherCol = 0; otherCol < SIZE; otherCol += 1) {
+        if (otherCol !== col && board[row][otherCol] === value) {
+          conflictingIndices.add(currentIndex);
+          conflictingIndices.add(row * SIZE + otherCol);
+        }
+      }
+
+      for (let otherRow = 0; otherRow < SIZE; otherRow += 1) {
+        if (otherRow !== row && board[otherRow][col] === value) {
+          conflictingIndices.add(currentIndex);
+          conflictingIndices.add(otherRow * SIZE + col);
+        }
+      }
+
+      const boxRowStart = Math.floor(row / 3) * 3;
+      const boxColStart = Math.floor(col / 3) * 3;
+      for (let boxRow = boxRowStart; boxRow < boxRowStart + 3; boxRow += 1) {
+        for (let boxCol = boxColStart; boxCol < boxColStart + 3; boxCol += 1) {
+          if ((boxRow !== row || boxCol !== col) && board[boxRow][boxCol] === value) {
+            conflictingIndices.add(currentIndex);
+            conflictingIndices.add(boxRow * SIZE + boxCol);
+          }
+        }
+      }
+    }
+  }
+
+  conflictingIndices.forEach((index) => {
+    if (inputs[index]) {
+      inputs[index].classList.add('conflict');
+    }
+  });
+}
+
 function startTimer() {
   stopTimer();
   elapsedSeconds = 0;
@@ -94,10 +157,16 @@ function loadLeaderboard() {
     return;
   }
   leaderboardList.innerHTML = '';
-  entries.slice(0, 10).forEach((entry) => {
-    const item = document.createElement('li');
-    item.innerText = `${entry.name} — ${formatTime(entry.time)} — ${entry.difficulty} — hints: ${entry.hintsUsed}`;
-    leaderboardList.appendChild(item);
+  entries.slice(0, 10).forEach((entry, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${entry.name}</td>
+      <td>${formatTime(entry.time)}</td>
+      <td>${entry.difficulty}</td>
+      <td>${entry.hintsUsed}</td>
+    `;
+    leaderboardList.appendChild(row);
   });
 }
 
@@ -202,6 +271,7 @@ function createBoardElement() {
         if (inputs[idx]) {
           inputs[idx].classList.remove('incorrect');
         }
+        updateConflictHighlights();
         const board = getBoardFromInputs();
         if (board.every((row) => row.every((cell) => cell !== 0))) {
           const res = await fetch('/check', {
@@ -229,6 +299,7 @@ function renderPuzzle(puz) {
   puzzle = puz;
   createBoardElement();
   clearHintHighlight();
+  clearConflictHighlights();
   const boardDiv = document.getElementById('sudoku-board');
   const inputs = boardDiv.getElementsByTagName('input');
   for (let i = 0; i < SIZE; i++) {
@@ -287,6 +358,7 @@ async function requestHint() {
   hintCellIndex = hintIndex;
   hintsUsed += 1;
   updateHintButtonState();
+  updateConflictHighlights();
   const boardAfterHint = getBoardFromInputs();
   if (boardAfterHint.every((row) => row.every((cell) => cell !== 0))) {
     const res = await fetch('/check', {

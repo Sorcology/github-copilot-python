@@ -28,7 +28,20 @@
   </div>
   <div class="leaderboard">
     <h2>Top 10 Leaderboard</h2>
-    <ol id="leaderboard-list"></ol>
+    <div class="leaderboard-table-wrapper">
+      <table id="leaderboard-table" class="leaderboard-table">
+        <thead>
+          <tr>
+            <th scope="col">Rank</th>
+            <th scope="col">Name</th>
+            <th scope="col">Time</th>
+            <th scope="col">Difficulty</th>
+            <th scope="col">Hints</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-list"></tbody>
+      </table>
+    </div>
   </div>
   <script src="/static/main.js"></script>
 </body>

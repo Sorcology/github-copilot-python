@@ -109,6 +109,22 @@ body.dark-mode .sudoku-cell {
     box-shadow: inset 0 0 0 2px #1565c0;
 }
 
+.sudoku-cell.conflict {
+    box-shadow: inset 0 0 0 2px #d32f2f;
+}
+
+.sudoku-cell.conflict:focus {
+    box-shadow: inset 0 0 0 2px #d32f2f;
+}
+
+body.dark-mode .sudoku-cell.conflict {
+    box-shadow: inset 0 0 0 2px #f87171;
+}
+
+body.dark-mode .sudoku-cell.conflict:focus {
+    box-shadow: inset 0 0 0 2px #f87171;
+}
+
 .sudoku-cell.sudoku-block-light {
     background: #ffffff;
 }
@@ -243,11 +259,38 @@ body.dark-mode .leaderboard {
     color: #333;
 }
 
-#leaderboard-list {
-    margin: 0;
-    padding-left: 20px;
+.leaderboard-table-wrapper {
+    overflow-x: auto;
 }
 
-#leaderboard-list li {
-    margin: 6px 0;
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 420px;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+}
+
+.leaderboard-table th {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+body.dark-mode .leaderboard-table th,
+body.dark-mode .leaderboard-table td {
+    border-color: #4b5563;
+}
+
+body.dark-mode .leaderboard-table th {
+    background: #374151;
+    color: #f9fafb;
+}
+
+body.dark-mode .leaderboard-table td {
+    color: #f9fafb;
 }
