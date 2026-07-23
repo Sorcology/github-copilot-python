@@ -7,6 +7,7 @@ let elapsedSeconds = 0;
 let currentDifficulty = 'medium';
 let hintsUsed = 0;
 let hintCellIndex = null;
+let pendingScore = null;
 
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
@@ -78,6 +79,25 @@ function loadLeaderboard() {
   });
 }
 
+function hideNamePrompt() {
+  const prompt = document.getElementById('name-prompt');
+  if (prompt) {
+    prompt.hidden = true;
+  }
+}
+
+function showNamePrompt() {
+  const prompt = document.getElementById('name-prompt');
+  const input = document.getElementById('player-name');
+  if (prompt) {
+    prompt.hidden = false;
+  }
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+}
+
 function saveLeaderboardEntry(score) {
   const stored = window.localStorage.getItem(LEADERBOARD_STORAGE_KEY);
   const entries = stored ? JSON.parse(stored) : [];
@@ -86,6 +106,7 @@ function saveLeaderboardEntry(score) {
   const topTen = entries.slice(0, 10);
   window.localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(topTen));
   loadLeaderboard();
+  hideNamePrompt();
 }
 
 function createBoardElement() {
@@ -143,7 +164,9 @@ function renderPuzzle(puz) {
 async function newGame() {
   startTimer();
   hintsUsed = 0;
+  pendingScore = null;
   clearHintHighlight();
+  hideNamePrompt();
   const res = await fetch(`/new?difficulty=${encodeURIComponent(currentDifficulty)}`);
   const data = await res.json();
   renderPuzzle(data.puzzle);
@@ -220,17 +243,14 @@ async function checkSolution() {
   }
   if (incorrect.size === 0) {
     stopTimer();
-    const playerName = window.prompt('Congratulations! Enter your name for the leaderboard:', 'Player');
-    if (playerName) {
-      saveLeaderboardEntry({
-        name: playerName.trim(),
-        time: elapsedSeconds,
-        difficulty: currentDifficulty,
-        hintsUsed
-      });
-    }
+    pendingScore = {
+      time: elapsedSeconds,
+      difficulty: currentDifficulty,
+      hintsUsed
+    };
+    showNamePrompt();
     msg.style.color = '#388e3c';
-    msg.innerText = 'Congratulations! You solved it!';
+    msg.innerText = 'Congratulations! Enter your name to save your score.';
   } else {
     msg.style.color = '#d32f2f';
     msg.innerText = 'Some cells are incorrect.';
@@ -242,6 +262,18 @@ window.addEventListener('load', () => {
   document.getElementById('new-game').addEventListener('click', newGame);
   document.getElementById('check-solution').addEventListener('click', checkSolution);
   document.getElementById('hint').addEventListener('click', requestHint);
+  document.getElementById('save-score').addEventListener('click', () => {
+    if (!pendingScore) {
+      return;
+    }
+    const playerNameInput = document.getElementById('player-name');
+    const playerName = (playerNameInput.value || 'Player').trim() || 'Player';
+    saveLeaderboardEntry({
+      name: playerName,
+      ...pendingScore
+    });
+    pendingScore = null;
+  });
   document.querySelectorAll('.difficulty-btn').forEach((button) => {
     button.addEventListener('click', () => {
       setDifficulty(button.dataset.difficulty);
